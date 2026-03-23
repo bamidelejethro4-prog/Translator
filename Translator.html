@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>mivon Translate – Fast Translator</title>
+  <style>
+    body {
+      font-family: system-ui, sans-serif;
+      background: #121212;
+      color: #e0e0e0;
+      margin: 0;
+      padding: 16px;
+      min-height: 100vh;
+    }
+    h1 {
+      text-align: center;
+      color: #4da6ff;
+      margin: 0 0 20px;
+      font-size: 1.8rem;
+    }
+    .container {
+      max-width: 600px;
+      margin: 0 auto;
+    }
+    textarea {
+      width: 100%;
+      height: 120px;
+      padding: 14px;
+      background: #1e1e1e;
+      color: white;
+      border: none;
+      border-radius: 12px;
+      font-size: 1.1rem;
+      resize: vertical;
+      margin-bottom: 12px;
+      box-sizing: border-box;
+    }
+    select, button {
+      width: 100%;
+      padding: 14px;
+      margin: 8px 0;
+      border: none;
+      border-radius: 12px;
+      font-size: 1.1rem;
+      box-sizing: border-box;
+    }
+    select {
+      background: #1e1e1e;
+      color: white;
+    }
+    button.primary {
+      background: #0066ff;
+      color: white;
+      font-weight: bold;
+    }
+    button.primary:active {
+      background: #0052cc;
+    }
+    button.secondary {
+      background: #444;
+      color: #ddd;
+    }
+    button.secondary:active {
+      background: #555;
+    }
+    #result {
+      background: #1e1e1e;
+      padding: 16px;
+      border-radius: 12px;
+      min-height: 80px;
+      margin-top: 16px;
+      white-space: pre-wrap;
+      word-wrap: break-word;
+      line-height: 1.5;
+    }
+    .status {
+      color: #aaa;
+      font-size: 0.95rem;
+      margin: 6px 0;
+      text-align: center;
+    }
+    .copy-btn {
+      background: #555;
+      color: white;
+      border: none;
+      padding: 10px 16px;
+      border-radius: 10px;
+      margin-top: 12px;
+      cursor: pointer;
+      font-size: 1rem;
+    }
+    .button-group {
+      display: flex;
+      gap: 12px;
+    }
+    .button-group button {
+      flex: 1;
+    }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <h1>⚡ mivon Translate</h1>
+
+  <textarea id="input" placeholder="Paste or type here..."></textarea>
+
+  <select id="targetLang">
+    <option value="en">English 🇬🇧</option>
+    <option value="yo">Yoruba 🇳🇬</option>
+    <option value="ig">Igbo 🇳🇬</option>
+    <option value="ha">Hausa 🇳🇬</option>
+    <option value="fr">French 🇫🇷</option>
+    <option value="es">Spanish 🇪🇸</option>
+    <option value="de">German 🇩🇪</option>
+    <option value="zh-CN">Chinese 🇨🇳</option>
+    <option value="ar">Arabic 🇸🇦</option>
+    <option value="ja">Japanese 🇯🇵</option>
+    <option value="ru">Russian 🇷🇺</option>
+    <option value="nl">Dutch 🇳🇱</option>
+  </select>
+
+  <div class="button-group">
+    <button class="primary" onclick="translateFast()">Translate</button>
+    <button class="secondary" onclick="startNewTranslation()">New Translation</button>
+  </div>
+
+  <div id="result">Translation appears here...</div>
+  <div class="status" id="status"></div>
+</div>
+
+<script>
+function clearAll() {
+  document.getElementById('input').value = '';
+  document.getElementById('result').innerHTML = 'Translation appears here...';
+  document.getElementById('status').textContent = '';
+}
+
+function startNewTranslation() {
+  clearAll();
+  document.getElementById('input').focus();
+}
+
+async function translateFast() {
+  const text = document.getElementById('input').value.trim();
+  const lang = document.getElementById('targetLang').value;
+  const result = document.getElementById('result');
+  const status = document.getElementById('status');
+
+  if (!text) {
+    result.textContent = "Please enter some text first!";
+    status.textContent = "";
+    return;
+  }
+
+  result.textContent = "Translating...";
+  status.textContent = "";
+
+  try {
+    const url = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=${lang}&dt=t&q=${encodeURIComponent(text)}`;
+    
+    const res = await fetch(url);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+
+    const data = await res.json();
+    const translated = data[0]?.[0]?.[0] || "";
+    const detected = data[2] || "auto";
+
+    if (!translated) {
+      result.textContent = "No translation returned.";
+      return;
+    }
+
+    result.innerHTML = `
+      <strong>${detected} → ${lang}</strong><br><br>
+      ${translated.replace(/\n/g, '<br>')}
+    `;
+
+    result.innerHTML += `
+      <br>
+      <button class="copy-btn" onclick="navigator.clipboard.writeText('${translated.replace(/'/g,"\\'").replace(/\n/g,"\\n")}').then(()=>alert('Text Copied!'))">
+        📋 Copy translation
+      </button>
+    `;
+
+  } catch (err) {
+    result.textContent = "Translation failed";
+    status.textContent = err.message.includes("Failed to fetch") 
+      ? "→ Check your internet connection"
+      : err.message;
+  }
+}
+</script>
+
+</body>
+</html>
