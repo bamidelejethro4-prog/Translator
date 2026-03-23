@@ -1,0 +1,2 @@
+# Translator
+For daily translation
